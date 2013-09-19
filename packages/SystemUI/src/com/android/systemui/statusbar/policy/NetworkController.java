@@ -49,6 +49,7 @@ import com.android.internal.telephony.cdma.EriInfo;
 import com.android.internal.util.AsyncChannel;
 import com.android.server.am.BatteryStatsService;
 import com.android.systemui.R;
+import com.android.systemui.statusbar.phone.CarrierLabel;
 
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
@@ -1230,6 +1231,8 @@ public class NetworkController extends BroadcastReceiver {
                 wifiLabel = customLabel;
             }
         }
+
+        mobileLabel = CarrierLabel.operatorCheck(mobileLabel);
 
         if (DEBUG) {
             Slog.d(TAG, "refreshViews connected={"

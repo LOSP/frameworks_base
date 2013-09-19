@@ -104,7 +104,7 @@ public class CarrierLabel extends TextView {
             Slog.d("CarrierLabel", "updateNetworkName showSpn=" + showSpn + " spn=" + spn
                     + " showPlmn=" + showPlmn + " plmn=" + plmn);
         }
-        final String str;
+        String str = "";
         // match logic in KeyguardStatusViewManager
         final boolean plmnValid = showPlmn && !TextUtils.isEmpty(plmn);
         final boolean spnValid = showSpn && !TextUtils.isEmpty(spn);
@@ -120,11 +120,26 @@ public class CarrierLabel extends TextView {
         String customLabel = Settings.System.getStringForUser(getContext().getContentResolver(),
                 Settings.System.CUSTOM_CARRIER_LABEL, UserHandle.USER_CURRENT);
         if(!TextUtils.isEmpty(customLabel))
-            setText(customLabel);
+            str = customLabel;
         else if (TextUtils.isEmpty(str.trim()))
-            setText(mLastCarrier);
-        else
-            setText(str);
+            str = mLastCarrier;
+        setText(operatorCheck(str));
+    }
+
+    public static String operatorCheck(String CarrierLabelText) {
+        if (CarrierLabelText != null) {
+            String str1 = CarrierLabelText.trim();
+            if (str1.equals("ctnet") || str1.equals("46003"))
+                return "中国电信";
+            else if (str1.equals("China Mobile") || str1.equals("46000") || str1.equals("46002") || str1.equals("46007"))
+                return "中国移动";
+            else if (str1.equals("China Unicom") || str1.equals("46001") || str1.equals("46006") || str1.equals("46020"))
+                return "中国联通";
+            else
+                return str1;
+        } else {
+            return "";
+        }
     }
 
     class SettingsObserver extends ContentObserver {

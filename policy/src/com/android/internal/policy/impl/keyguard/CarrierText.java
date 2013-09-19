@@ -74,7 +74,7 @@ public class CarrierText extends TextView {
     }
 
     protected void updateCarrierText(State simState, CharSequence plmn, CharSequence spn) {
-        CharSequence text = getCarrierTextForSimState(simState, plmn, spn);
+        CharSequence text = operatorCheck(getCarrierTextForSimState(simState, plmn, spn).toString());
         String customLabel = Settings.System.getString(getContext().getContentResolver(),
                 Settings.System.CUSTOM_CARRIER_LABEL);
         if (customLabel == null || customLabel.length() == 0) {
@@ -85,6 +85,22 @@ public class CarrierText extends TextView {
             }
         } else {
             setText(customLabel);
+        }
+    }
+    
+    public static String operatorCheck(String CarrierLabelText) {
+        if (CarrierLabelText != null) {
+            String str1 = CarrierLabelText.trim();
+            if (str1.equals("ctnet") || str1.equals("46003"))
+                return "中国电信";
+            else if (str1.equals("China Mobile") || str1.equals("46000") || str1.equals("46002") || str1.equals("46007"))
+                return "中国移动";
+            else if (str1.equals("China Unicom") || str1.equals("46001") || str1.equals("46006") || str1.equals("46020"))
+                return "中国联通";
+            else
+                return str1;
+        } else {
+            return "";
         }
     }
 
