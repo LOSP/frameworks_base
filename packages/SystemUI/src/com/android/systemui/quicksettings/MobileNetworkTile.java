@@ -35,6 +35,7 @@ import com.android.systemui.statusbar.phone.QuickSettingsController;
 import com.android.systemui.statusbar.phone.QuickSettingsContainerView;
 import com.android.systemui.statusbar.policy.NetworkController;
 import com.android.systemui.statusbar.policy.NetworkController.NetworkSignalChangedCallback;
+import com.android.systemui.statusbar.phone.CarrierLabel;
 import android.content.BroadcastReceiver;
 
 public class MobileNetworkTile extends QuickSettingsTile implements NetworkSignalChangedCallback{
@@ -129,6 +130,7 @@ public class MobileNetworkTile extends QuickSettingsTile implements NetworkSigna
             mLabel = enabled
                     ? removeTrailingPeriod(description)
                     : r.getString(R.string.quick_settings_rssi_emergency_only);
+            if (mLabel != null) mLabel = CarrierLabel.operatorCheck(mLabel);
             updateQuickSettings();
         }
     }
