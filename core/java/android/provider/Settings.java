@@ -4154,6 +4154,27 @@ public final class Settings {
         public static final String STATUS_BAR_SHOW_TRAFFIC = "status_bar_show_traffic";
 
         /**
+         * Status bar traffic color
+         *
+         * @hide
+         */
+         public static final String STATUS_BAR_TRAFFIC_COLOR = "status_bar_traffic_color";
+
+        /**
+         * Show carrier label on status bar or not
+         *
+         * @hide
+         */
+         public static final String STATUS_BAR_SHOW_CARRIER = "status_bar_show_carrier";
+
+        /**
+         * Status carrier label color
+         *
+         * @hide
+         */
+         public static final String STATUS_BAR_CARRIER_COLOR = "status_bar_carrier_color";
+
+        /**
          * Settings to backup. This is here so that it's in the same place as the settings
          * keys and easy to update.
          *

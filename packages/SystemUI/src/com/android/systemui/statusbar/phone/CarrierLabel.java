@@ -45,6 +45,7 @@ import com.android.internal.R;
  */
 public class CarrierLabel extends TextView {
     private boolean mAttached;
+    protected int mCarrierColor = com.android.internal.R.color.holo_blue_light;
     Handler mHandler;
     String mLastCarrier;
 
@@ -74,6 +75,8 @@ public class CarrierLabel extends TextView {
             filter.addAction(TelephonyIntents.SPN_STRINGS_UPDATED_ACTION);
             getContext().registerReceiver(mIntentReceiver, filter, null, getHandler());
         }
+
+        updateSettings();
     }
 
     @Override
@@ -142,6 +145,25 @@ public class CarrierLabel extends TextView {
         }
     }
 
+    private void updateSettings() {
+        boolean showCarrier = (Settings.System.getInt(getContext().getContentResolver(),
+                Settings.System.STATUS_BAR_SHOW_CARRIER, 1) == 1);
+        if (showCarrier) {
+            setVisibility(View.VISIBLE);
+        } else {
+            setVisibility(View.GONE);
+        }
+        // set the color
+        int defaultColor = getResources().getColor(
+                com.android.internal.R.color.holo_blue_light);
+        mCarrierColor = Settings.System.getInt(getContext().getContentResolver(),
+                Settings.System.STATUS_BAR_CARRIER_COLOR, -2);
+        if (mCarrierColor == Integer.MIN_VALUE || mCarrierColor == -2) {
+            mCarrierColor = defaultColor;
+        }
+        setTextColor(mCarrierColor);
+    }
+
     class SettingsObserver extends ContentObserver {
         SettingsObserver(Handler handler) {
             super(handler);
@@ -151,12 +173,17 @@ public class CarrierLabel extends TextView {
             ContentResolver resolver = getContext().getContentResolver();
             resolver.registerContentObserver(Settings.System
                 .getUriFor(Settings.System.CUSTOM_CARRIER_LABEL), false, this);
+            resolver.registerContentObserver(Settings.System
+                .getUriFor(Settings.System.STATUS_BAR_SHOW_CARRIER), false, this);
+            resolver.registerContentObserver(Settings.System
+                .getUriFor(Settings.System.STATUS_BAR_CARRIER_COLOR), false, this);
         }
 
         @Override
         public void onChange(boolean selfChange) {
-                updateNetworkName(true, Settings.System.getStringForUser(getContext().getContentResolver(),
-                    Settings.System.CUSTOM_CARRIER_LABEL, UserHandle.USER_CURRENT), false, null);
+            updateSettings();
+            updateNetworkName(true, Settings.System.getStringForUser(getContext().getContentResolver(),
+                  Settings.System.CUSTOM_CARRIER_LABEL, UserHandle.USER_CURRENT), false, null);
         }
     }
 }

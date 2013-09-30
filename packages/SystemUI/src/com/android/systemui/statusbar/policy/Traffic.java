@@ -44,6 +44,7 @@ import java.io.RandomAccessFile;
 
 public class Traffic extends TextView {
     private boolean mAttached;
+    protected int mTrafficColor = com.android.internal.R.color.holo_blue_light;
     boolean showTraffic;
     Handler mHandler;
     Handler mTrafficHandler;
@@ -59,6 +60,8 @@ public class Traffic extends TextView {
             ContentResolver resolver = mContext.getContentResolver();
             resolver.registerContentObserver(Settings.System
                     .getUriFor(Settings.System.STATUS_BAR_SHOW_TRAFFIC), false, this);
+            resolver.registerContentObserver(Settings.System
+                    .getUriFor(Settings.System.STATUS_BAR_TRAFFIC_COLOR), false, this);
         }
 
         @Override
@@ -205,6 +208,14 @@ public class Traffic extends TextView {
         showTraffic = (Settings.System.getInt(resolver,
                         Settings.System.STATUS_BAR_SHOW_TRAFFIC, 1) == 1);
         if (showTraffic && getConnectAvailable()) {
+                int defaultColor = getResources().getColor(
+                        com.android.internal.R.color.holo_blue_light);
+                mTrafficColor = Settings.System.getInt(resolver,
+                        Settings.System.STATUS_BAR_TRAFFIC_COLOR, -2);
+                if (mTrafficColor == Integer.MIN_VALUE || mTrafficColor == -2) {
+                        mTrafficColor = defaultColor;
+                }
+                setTextColor(mTrafficColor);
                 updateTraffic();                     
                 setVisibility(View.VISIBLE);
         } else {
