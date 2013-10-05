@@ -48,6 +48,7 @@ public class CarrierLabel extends TextView {
     protected int mCarrierColor = com.android.internal.R.color.holo_blue_light;
     Handler mHandler;
     String mLastCarrier;
+    private Context mContext;
 
     public CarrierLabel(Context context) {
         this(context, null);
@@ -59,6 +60,7 @@ public class CarrierLabel extends TextView {
 
     public CarrierLabel(Context context, AttributeSet attrs, int defStyle) {
         super(context, attrs, defStyle);
+        mContext = context;
         updateNetworkName(false, null, false, null);
         mHandler = new Handler();
         SettingsObserver settingsObserver = new SettingsObserver(mHandler);
@@ -126,20 +128,20 @@ public class CarrierLabel extends TextView {
             str = customLabel;
         else if (TextUtils.isEmpty(str.trim()))
             str = mLastCarrier;
-        setText(operatorCheck(str));
+        setText(operatorCheck(mContext, str));
     }
 
-    public static String operatorCheck(String CarrierLabelText) {
+    public static String operatorCheck(Context context, String CarrierLabelText) {
         if (CarrierLabelText != null) {
-            String str1 = CarrierLabelText.trim();
-            if (str1.equals("ctnet") || str1.equals("46003"))
-                return "中国电信";
-            else if (str1.equals("China Mobile") || str1.equals("46000") || str1.equals("46002") || str1.equals("46007"))
-                return "中国移动";
-            else if (str1.equals("China Unicom") || str1.equals("46001") || str1.equals("46006") || str1.equals("46020"))
-                return "中国联通";
-            else
-                return str1;
+            String str1 = CarrierLabelText.trim().toLowerCase();
+            String ids[] = context.getResources().getStringArray(com.android.internal.R.array.operator_translate_ids);
+            String names[] = context.getResources().getStringArray(com.android.internal.R.array.operator_translate_names);
+            for (int i = 0; i < ids.length; i++) {
+                if (str1.equals(ids[i])) {
+                    return names[i];
+                }
+            }
+            return str1;
         } else {
             return "";
         }

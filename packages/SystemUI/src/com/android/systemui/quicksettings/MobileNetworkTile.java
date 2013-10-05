@@ -130,7 +130,7 @@ public class MobileNetworkTile extends QuickSettingsTile implements NetworkSigna
             mLabel = enabled
                     ? removeTrailingPeriod(description)
                     : r.getString(R.string.quick_settings_rssi_emergency_only);
-            if (mLabel != null) mLabel = CarrierLabel.operatorCheck(mLabel);
+            if (mLabel != null) mLabel = CarrierLabel.operatorCheck(mContext, mLabel);
             updateQuickSettings();
         }
     }

@@ -1960,4 +1960,8 @@
   <!-- Irda Service -->
   <java-symbol type="bool" name="config_enableIrdaManagerService" />
 
+  <!-- Operator translations -->
+  <java-symbol type="array" name="operator_translate_ids" />
+  <java-symbol type="array" name="operator_translate_names" />
+
 </resources>

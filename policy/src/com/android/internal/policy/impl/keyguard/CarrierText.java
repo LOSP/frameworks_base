@@ -29,6 +29,7 @@ import com.android.internal.widget.LockPatternUtils;
 
 public class CarrierText extends TextView {
     private static CharSequence mSeparator;
+    private Context mContext;
 
     private LockPatternUtils mLockPatternUtils;
 
@@ -70,6 +71,7 @@ public class CarrierText extends TextView {
 
     public CarrierText(Context context, AttributeSet attrs) {
         super(context, attrs);
+        mContext = context;
         mLockPatternUtils = new LockPatternUtils(mContext);
     }
 
@@ -89,17 +91,17 @@ public class CarrierText extends TextView {
         }
     }
     
-    public static String operatorCheck(String CarrierLabelText) {
+    public String operatorCheck(String CarrierLabelText) {
         if (CarrierLabelText != null) {
-            String str1 = CarrierLabelText.trim();
-            if (str1.equals("ctnet") || str1.equals("46003"))
-                return "中国电信";
-            else if (str1.equals("China Mobile") || str1.equals("46000") || str1.equals("46002") || str1.equals("46007"))
-                return "中国移动";
-            else if (str1.equals("China Unicom") || str1.equals("46001") || str1.equals("46006") || str1.equals("46020"))
-                return "中国联通";
-            else
-                return str1;
+            String str1 = CarrierLabelText.trim().toLowerCase();
+            String ids[] = mContext.getResources().getStringArray(com.android.internal.R.array.operator_translate_ids);
+            String names[] = mContext.getResources().getStringArray(com.android.internal.R.array.operator_translate_names);
+            for (int i = 0; i < ids.length; i++) {
+                if (str1.equals(ids[i])) {
+                    return names[i];
+                }
+            }
+            return str1;
         } else {
             return "";
         }

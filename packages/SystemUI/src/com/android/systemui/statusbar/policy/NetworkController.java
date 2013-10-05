@@ -1232,7 +1232,7 @@ public class NetworkController extends BroadcastReceiver {
             }
         }
 
-        mobileLabel = CarrierLabel.operatorCheck(mobileLabel);
+        mobileLabel = CarrierLabel.operatorCheck(mContext, mobileLabel);
 
         if (DEBUG) {
             Slog.d(TAG, "refreshViews connected={"
