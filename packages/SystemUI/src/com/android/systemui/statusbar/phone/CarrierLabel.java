@@ -125,10 +125,11 @@ public class CarrierLabel extends TextView {
         String customLabel = Settings.System.getStringForUser(getContext().getContentResolver(),
                 Settings.System.CUSTOM_CARRIER_LABEL, UserHandle.USER_CURRENT);
         if(!TextUtils.isEmpty(customLabel))
-            str = customLabel;
+            setText(customLabel);
         else if (TextUtils.isEmpty(str.trim()))
-            str = mLastCarrier;
-        setText(operatorCheck(mContext, str));
+            setText(operatorCheck(mContext, mLastCarrier));
+        else
+            setText(operatorCheck(mContext, str));
     }
 
     public static String operatorCheck(Context context, String CarrierLabelText) {
