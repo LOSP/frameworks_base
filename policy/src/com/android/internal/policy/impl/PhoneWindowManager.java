@@ -50,6 +50,7 @@ import android.os.Bundle;
 import android.os.FactoryTest;
 import android.os.Handler;
 import android.os.IBinder;
+import android.os.IHardwareService;
 import android.os.IRemoteCallback;
 import android.os.Looper;
 import android.os.Message;
@@ -203,6 +204,8 @@ public class PhoneWindowManager implements WindowManagerPolicy {
      */
     private final Object mLock = new Object();
 
+    private boolean mButtonLightEnabled;
+
     Context mContext;
     IWindowManager mWindowManager;
     WindowManagerFuncs mWindowManagerFuncs;
@@ -211,6 +214,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
     boolean mPreloadedRecentApps;
     final Object mServiceAquireLock = new Object();
     Vibrator mVibrator; // Vibrator for giving feedback of orientation changes
+    IHardwareService mLight;
     SearchManager mSearchManager;
 
     // Vibrator pattern for haptic feedback of a long press.
@@ -435,6 +439,9 @@ public class PhoneWindowManager implements WindowManagerPolicy {
     int mOverscanRight = 0;
     int mOverscanBottom = 0;
 
+    // Panel Orientation default portrait
+    int mPanelOrientation = Surface.ROTATION_0;
+
     // What we do when the user long presses on home
     private int mLongPressOnHomeBehavior;
 
@@ -475,6 +482,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
     private static final int MSG_DISABLE_POINTER_LOCATION = 2;
     private static final int MSG_DISPATCH_MEDIA_KEY_WITH_WAKE_LOCK = 3;
     private static final int MSG_DISPATCH_MEDIA_KEY_REPEAT_WITH_WAKE_LOCK = 4;
+    boolean mWifiDisplayConnected;
 
     private class PolicyHandler extends Handler {
         @Override
@@ -904,6 +912,16 @@ public class PhoneWindowManager implements WindowManagerPolicy {
                 com.android.internal.R.bool.config_lidControlsSleep);
         mTranslucentDecorEnabled = mContext.getResources().getBoolean(
                 com.android.internal.R.bool.config_enableTranslucentDecor);
+        mButtonLightEnabled = mContext.getResources().getBoolean(
+                com.android.internal.R.bool.config_button_light_enabled);
+
+        if (mButtonLightEnabled) {
+            mLight = IHardwareService.Stub.asInterface(
+                    ServiceManager.getService("hardware"));
+
+            if(mLight == null) mButtonLightEnabled = false;
+        }
+
         readConfigurationDependentBehaviors();
 
         // register for dock events
@@ -960,6 +978,13 @@ public class PhoneWindowManager implements WindowManagerPolicy {
         mWindowManagerFuncs.registerPointerEventListener(mSystemGestures);
 
         mVibrator = (Vibrator)context.getSystemService(Context.VIBRATOR_SERVICE);
+
+        // register for WIFI Display intents
+        IntentFilter wifiDisplayFilter = new IntentFilter(
+                                                Intent.ACTION_WIFI_DISPLAY_VIDEO);
+        Intent wifidisplayIntent = context.registerReceiver(
+                                      mWifiDisplayReceiver, wifiDisplayFilter);
+
         mLongPressVibePattern = getLongIntArray(mContext.getResources(),
                 com.android.internal.R.array.config_longPressVibePattern);
         mVirtualKeyVibePattern = getLongIntArray(mContext.getResources(),
@@ -1016,6 +1041,8 @@ public class PhoneWindowManager implements WindowManagerPolicy {
             return;
         }
         mDisplay = display;
+        mPanelOrientation =
+            SystemProperties.getInt("persist.panel.orientation", 0) / 90;
 
         final Resources res = mContext.getResources();
         int shortSize, longSize;
@@ -1954,6 +1981,16 @@ public class PhoneWindowManager implements WindowManagerPolicy {
             Log.d(TAG, "interceptKeyTi keyCode=" + keyCode + " down=" + down + " repeatCount="
                     + repeatCount + " keyguardOn=" + keyguardOn + " mHomePressed=" + mHomePressed
                     + " canceled=" + canceled);
+        }
+
+        if (mButtonLightEnabled && (down && repeatCount == 0 && (keyCode == KeyEvent.KEYCODE_HOME
+                || keyCode == KeyEvent.KEYCODE_BACK || keyCode == KeyEvent.KEYCODE_MENU
+                || keyCode == KeyEvent.KEYCODE_SEARCH))) {
+            try {
+                mLight.setButtonLightEnabled(true);
+            } catch(RemoteException e) {
+                Slog.e(TAG, "remote call for turn on button light failed.");
+            }
         }
 
         // If we think we might have a volume down & power key chord on the way
@@ -3972,6 +4009,14 @@ public class PhoneWindowManager implements WindowManagerPolicy {
                         mPowerKeyTriggered = true;
                         mPowerKeyTime = event.getDownTime();
                         interceptScreenshotChord();
+
+                        if (mButtonLightEnabled) {
+                            try {
+                                mLight.setButtonLightEnabled(false);
+                            } catch(RemoteException e) {
+                                Slog.e(TAG, "remote call for turn off button light failed.");
+                            }
+                        }
                     }
 
                     ITelephony telephonyService = getTelephonyService();
@@ -4101,6 +4146,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
             case KeyEvent.KEYCODE_MEDIA_FAST_FORWARD:
             case KeyEvent.KEYCODE_MEDIA_AUDIO_TRACK:
             case KeyEvent.KEYCODE_CAMERA:
+            case KeyEvent.KEYCODE_FOCUS:
                 return false;
         }
         return true;
@@ -4250,6 +4296,21 @@ public class PhoneWindowManager implements WindowManagerPolicy {
             }
         }
     }
+
+    BroadcastReceiver mWifiDisplayReceiver = new BroadcastReceiver() {
+        public void onReceive(Context context, Intent intent) {
+        String action = intent.getAction();
+            if (action.equals(Intent.ACTION_WIFI_DISPLAY_VIDEO)) {
+                int state = intent.getIntExtra("state", 0);
+                if(state == 1) {
+                    mWifiDisplayConnected = true;
+                } else {
+                    mWifiDisplayConnected = false;
+                }
+                updateRotation(true);
+            }
+        }
+    };
 
     @Override
     public void screenTurnedOff(int why) {
@@ -4465,7 +4526,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
                 // enable 180 degree rotation while docked.
                 preferredRotation = mDeskDockEnablesAccelerometer
                         ? sensorRotation : mDeskDockRotation;
-            } else if (mHdmiPlugged && mDemoHdmiRotationLock) {
+            } else if ((mHdmiPlugged || mWifiDisplayConnected) && mDemoHdmiRotationLock) {
                 // Ignore sensor when plugged into HDMI when demo HDMI rotation lock enabled.
                 // Note that the dock orientation overrides the HDMI orientation.
                 preferredRotation = mDemoHdmiRotation;
@@ -4576,7 +4637,7 @@ public class PhoneWindowManager implements WindowManagerPolicy {
                     if (preferredRotation >= 0) {
                         return preferredRotation;
                     }
-                    return Surface.ROTATION_0;
+                    return mPanelOrientation;
             }
         }
     }
