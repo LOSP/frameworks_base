@@ -147,8 +147,7 @@ LOCAL_SRC_FILES:= \
 	android_content_res_ObbScanner.cpp \
 	android_content_res_Configuration.cpp \
 	android_animation_PropertyValuesHolder.cpp \
-	com_android_internal_net_NetworkStatsFactory.cpp \
-    org_codeaurora_Performance.cpp
+	com_android_internal_net_NetworkStatsFactory.cpp
 
 LOCAL_C_INCLUDES += \
 	$(JNI_H_INCLUDE) \

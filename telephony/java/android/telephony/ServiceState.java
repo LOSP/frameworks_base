@@ -146,11 +146,6 @@ public class ServiceState implements Parcelable {
      * @hide
      */
     public static final int RIL_RADIO_TECHNOLOGY_GSM = 16;
-    /**
-     * TD-SCDMA
-     * @hide
-     */
-    public static final int RIL_RADIO_TECHNOLOGY_TD_SCDMA = 17;
 
     /**
      * Available registration states for GSM, UMTS and CDMA.
@@ -186,7 +181,7 @@ public class ServiceState implements Parcelable {
     private int mSystemId;
     private int mCdmaRoamingIndicator;
     private int mCdmaDefaultRoamingIndicator;
-    private int mCdmaEriIconIndex = 1; //EriInfo.ROAMING_INDICATOR_OFF;
+    private int mCdmaEriIconIndex;
     private int mCdmaEriIconMode;
 
     /**
@@ -538,9 +533,6 @@ public class ServiceState implements Parcelable {
             case RIL_RADIO_TECHNOLOGY_GSM:
                 rtString = "GSM";
                 break;
-            case RIL_RADIO_TECHNOLOGY_TD_SCDMA:
-                rtString = "TD-SCDMA";
-                break;
             default:
                 rtString = "Unexpected";
                 Rlog.w(LOG_TAG, "Unexpected radioTechnology=" + rt);
@@ -805,10 +797,6 @@ public class ServiceState implements Parcelable {
             return TelephonyManager.NETWORK_TYPE_LTE;
         case ServiceState.RIL_RADIO_TECHNOLOGY_HSPAP:
             return TelephonyManager.NETWORK_TYPE_HSPAP;
-        case ServiceState.RIL_RADIO_TECHNOLOGY_GSM:
-            return TelephonyManager.NETWORK_TYPE_GSM;
-        case ServiceState.RIL_RADIO_TECHNOLOGY_TD_SCDMA:
-            return TelephonyManager.NETWORK_TYPE_TD_SCDMA;
         default:
             return TelephonyManager.NETWORK_TYPE_UNKNOWN;
         }
@@ -858,8 +846,7 @@ public class ServiceState implements Parcelable {
                 || radioTechnology == RIL_RADIO_TECHNOLOGY_HSPA
                 || radioTechnology == RIL_RADIO_TECHNOLOGY_LTE
                 || radioTechnology == RIL_RADIO_TECHNOLOGY_HSPAP
-                || radioTechnology == RIL_RADIO_TECHNOLOGY_GSM
-                || radioTechnology == RIL_RADIO_TECHNOLOGY_TD_SCDMA;
+                || radioTechnology == RIL_RADIO_TECHNOLOGY_GSM;
     }
 
     /** @hide */

@@ -1,7 +1,4 @@
 /*
- * Copyright (c) 2013, The Linux Foundation. All rights reserved.
- * Not a Contribution.
- *
  * Copyright (C) 2008 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -55,12 +52,6 @@ struct audiorecord_callback_cookie {
 // keep these values in sync with AudioFormat.java
 #define ENCODING_PCM_16BIT 2
 #define ENCODING_PCM_8BIT  3
-#define ENCODING_AMRNB     100
-#define ENCODING_AMRWB     101
-#define ENCODING_EVRC      102
-#define ENCODING_EVRCB     103
-#define ENCODING_EVRCWB    104
-#define ENCODING_EVRCNW    105
 
 static Mutex sLock;
 static SortedVector <audiorecord_callback_cookie *> sAudioRecordCallBackCookies;
@@ -164,30 +155,6 @@ static sp<AudioRecord> setAudioRecord(JNIEnv* env, jobject thiz, const sp<AudioR
     return old;
 }
 
-int getformatrec(int audioformat)
-{
-    switch (audioformat) {
-    case ENCODING_PCM_16BIT:
-        return AUDIO_FORMAT_PCM_16_BIT;
-    case ENCODING_PCM_8BIT:
-        return AUDIO_FORMAT_PCM_8_BIT;
-    case ENCODING_AMRNB:
-        return AUDIO_FORMAT_AMR_NB;
-    case ENCODING_AMRWB:
-        return AUDIO_FORMAT_AMR_WB;
-    case ENCODING_EVRC:
-        return AUDIO_FORMAT_EVRC;
-    case ENCODING_EVRCB:
-        return AUDIO_FORMAT_EVRCB;
-    case ENCODING_EVRCWB:
-        return AUDIO_FORMAT_EVRCWB;
-    case ENCODING_EVRCNW:
-        return AUDIO_FORMAT_EVRCNW;
-    default:
-        return AUDIO_FORMAT_PCM_8_BIT;
-    }
-}
-
 // ----------------------------------------------------------------------------
 static int
 android_media_AudioRecord_setup(JNIEnv *env, jobject thiz, jobject weak_this,
@@ -206,26 +173,15 @@ android_media_AudioRecord_setup(JNIEnv *env, jobject thiz, jobject weak_this,
     uint32_t nbChannels = popcount(channelMask);
 
     // compare the format against the Java constants
-     if ((audioFormat != ENCODING_PCM_16BIT)
-         && (audioFormat != ENCODING_PCM_8BIT)
-         && (audioFormat != ENCODING_AMRNB)
-         && (audioFormat != ENCODING_AMRWB)
-         && (audioFormat != ENCODING_EVRC)
-         && (audioFormat != ENCODING_EVRCB)
-         && (audioFormat != ENCODING_EVRCWB)
-         && (audioFormat != ENCODING_EVRCNW)) {
-         ALOGE("Error creating AudioRecord: unsupported audio format.");
-         return AUDIORECORD_ERROR_SETUP_INVALIDFORMAT;
+    if ((audioFormat != ENCODING_PCM_16BIT)
+        && (audioFormat != ENCODING_PCM_8BIT)) {
+        ALOGE("Error creating AudioRecord: unsupported audio format.");
+        return AUDIORECORD_ERROR_SETUP_INVALIDFORMAT;
     }
-    int bytesPerSample;
-    if(audioFormat == ENCODING_PCM_16BIT)
-        bytesPerSample = 2;
-    else if((audioFormat == ENCODING_AMRWB) &&
-            ((uint32_t)source != AUDIO_SOURCE_VOICE_COMMUNICATION))
-        bytesPerSample = 61;
-    else
-        bytesPerSample = 1;
-    audio_format_t format = (audio_format_t)getformatrec(audioFormat);
+
+    int bytesPerSample = audioFormat == ENCODING_PCM_16BIT ? 2 : 1;
+    audio_format_t format = audioFormat == ENCODING_PCM_16BIT ?
+            AUDIO_FORMAT_PCM_16_BIT : AUDIO_FORMAT_PCM_8_BIT;
 
     if (buffSizeInBytes == 0) {
          ALOGE("Error creating AudioRecord: frameCount is 0.");
@@ -557,7 +513,8 @@ static jint android_media_AudioRecord_get_min_buff_size(JNIEnv *env,  jobject th
     size_t frameCount = 0;
     status_t result = AudioRecord::getMinFrameCount(&frameCount,
             sampleRateInHertz,
-            (audio_format_t)getformatrec(audioFormat),
+            (audioFormat == ENCODING_PCM_16BIT ?
+                AUDIO_FORMAT_PCM_16_BIT : AUDIO_FORMAT_PCM_8_BIT),
             audio_channel_in_mask_from_count(nbChannels));
 
     if (result == BAD_VALUE) {
@@ -566,15 +523,7 @@ static jint android_media_AudioRecord_get_min_buff_size(JNIEnv *env,  jobject th
     if (result != NO_ERROR) {
         return -1;
     }
-    int bytesPerSample;
-    if(audioFormat == ENCODING_PCM_16BIT)
-        bytesPerSample = 2;
-    else if(audioFormat == ENCODING_AMRWB)
-        bytesPerSample = 61;
-    else
-        bytesPerSample = 1;
-
-    return frameCount * nbChannels * bytesPerSample;
+    return frameCount * nbChannels * (audioFormat == ENCODING_PCM_16BIT ? 2 : 1);
 }
 
 

@@ -1,7 +1,4 @@
 /*
- * Copyright (c) 2013, The Linux Foundation. All rights reserved.
- * Not a Contribution.
- *
  * Copyright (C) 2008 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -22,10 +19,6 @@ package android.media;
 import java.lang.ref.WeakReference;
 import java.nio.ByteBuffer;
 
-import android.app.ActivityThread;
-import android.app.AppOpsManager;
-import android.content.Context;
-import android.os.Binder;
 import android.os.Handler;
 import android.os.Looper;
 import android.os.Message;
@@ -291,10 +284,6 @@ public class AudioRecord
             mChannelCount = 2;
             mChannelMask = channelConfig;
             break;
-        case AudioFormat.CHANNEL_IN_5POINT1:
-            mChannelCount = 6;
-            mChannelMask = AudioFormat.CHANNEL_IN_5POINT1;
-            break;
         default:
             throw new IllegalArgumentException("Unsupported channel configuration.");
         }
@@ -307,12 +296,6 @@ public class AudioRecord
             break;
         case AudioFormat.ENCODING_PCM_16BIT:
         case AudioFormat.ENCODING_PCM_8BIT:
-        case AudioFormat.ENCODING_AMRNB:
-        case AudioFormat.ENCODING_AMRWB:
-        case AudioFormat.ENCODING_EVRC:
-        case AudioFormat.ENCODING_EVRCB:
-        case AudioFormat.ENCODING_EVRCWB:
-        case AudioFormat.ENCODING_EVRCNW:
             mAudioFormat = audioFormat;
             break;
         default:
@@ -331,15 +314,8 @@ public class AudioRecord
     private void audioBuffSizeCheck(int audioBufferSize) {
         // NB: this section is only valid with PCM data.
         // To update when supporting compressed formats
-        int bytesPerSample;
-        if(mAudioFormat == AudioFormat.ENCODING_PCM_16BIT)
-            bytesPerSample = 2;
-        else if((mAudioFormat == AudioFormat.ENCODING_AMRWB) &&
-                (mRecordSource != MediaRecorder.AudioSource.VOICE_COMMUNICATION))
-            bytesPerSample = 61;
-        else
-            bytesPerSample = 1;
-        int frameSizeInBytes = mChannelCount * bytesPerSample;
+        int frameSizeInBytes = mChannelCount
+            * (mAudioFormat == AudioFormat.ENCODING_PCM_8BIT ? 1 : 2);
         if ((audioBufferSize % frameSizeInBytes != 0) || (audioBufferSize < 1)) {
             throw new IllegalArgumentException("Invalid audio buffer size.");
         }
@@ -484,9 +460,6 @@ public class AudioRecord
         case (AudioFormat.CHANNEL_IN_FRONT | AudioFormat.CHANNEL_IN_BACK):
             channelCount = 2;
             break;
-        case AudioFormat.CHANNEL_IN_5POINT1:
-            channelCount = 6;
-            break;
         case AudioFormat.CHANNEL_INVALID:
         default:
             loge("getMinBufferSize(): Invalid channel configuration.");
@@ -494,13 +467,7 @@ public class AudioRecord
         }
 
         // PCM_8BIT is not supported at the moment
-        if (audioFormat != AudioFormat.ENCODING_PCM_16BIT
-            && audioFormat != AudioFormat.ENCODING_AMRNB
-            && audioFormat != AudioFormat.ENCODING_AMRWB
-            && audioFormat != AudioFormat.ENCODING_EVRC
-            && audioFormat != AudioFormat.ENCODING_EVRCB
-            && audioFormat != AudioFormat.ENCODING_EVRCWB
-            && audioFormat != AudioFormat.ENCODING_EVRCNW) {
+        if (audioFormat != AudioFormat.ENCODING_PCM_16BIT) {
             loge("getMinBufferSize(): Invalid audio format.");
             return ERROR_BAD_VALUE;
         }
@@ -526,21 +493,6 @@ public class AudioRecord
         return mSessionId;
     }
 
-    //--------------------------------------------------------
-    // Check user permission
-    //--------------------------------------------------------
-    private boolean checkPermission() {
-        AppOpsManager appOps = (AppOpsManager) ActivityThread.currentApplication().
-            getSystemService(Context.APP_OPS_SERVICE);
-        int callingUid = Binder.getCallingUid();
-        String callingPackage= ActivityThread.currentPackageName();
-        if (appOps.noteOp(AppOpsManager.OP_RECORD_AUDIO, callingUid, callingPackage) ==
-            AppOpsManager.MODE_ALLOWED)
-            return true;
-        else
-            return false;
-    }
-
     //---------------------------------------------------------
     // Transport control methods
     //--------------------
@@ -554,10 +506,6 @@ public class AudioRecord
             throw new IllegalStateException("startRecording() called on an "
                     + "uninitialized AudioRecord.");
         }
-
-        // check user permission
-        if (!checkPermission())
-            return;
 
         // start recording
         synchronized(mRecordingStateLock) {
@@ -580,10 +528,6 @@ public class AudioRecord
             throw new IllegalStateException("startRecording() called on an "
                     + "uninitialized AudioRecord.");
         }
-
-        // check user permission
-        if (!checkPermission())
-            return;
 
         // start recording
         synchronized(mRecordingStateLock) {

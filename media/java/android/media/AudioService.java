@@ -428,8 +428,8 @@ public class AudioService extends IAudioService.Stub {
     // Devices for which the volume is fixed and VolumePanel slider should be disabled
     final int mFixedVolumeDevices = AudioSystem.DEVICE_OUT_AUX_DIGITAL |
             AudioSystem.DEVICE_OUT_DGTL_DOCK_HEADSET |
-            AudioSystem.DEVICE_OUT_ALL_USB |
-            AudioSystem.DEVICE_OUT_PROXY; // use fixed volume on proxy device(WiFi display)
+            AudioSystem.DEVICE_OUT_ANLG_DOCK_HEADSET |
+            AudioSystem.DEVICE_OUT_ALL_USB;
 
     // TODO merge orientation and rotation
     private final boolean mMonitorOrientation;
@@ -1019,7 +1019,7 @@ public class AudioService extends IAudioService.Stub {
                 (flags & AudioManager.FLAG_BLUETOOTH_ABS_VOLUME) == 0) {
                 synchronized (mA2dpAvrcpLock) {
                     if (mA2dp != null && mAvrcpAbsVolSupported) {
-                        mA2dp.setAvrcpAbsoluteVolume(index / 10);
+                        mA2dp.setAvrcpAbsoluteVolume(index);
                     }
                 }
             }
@@ -1138,7 +1138,7 @@ public class AudioService extends IAudioService.Stub {
         return delta;
     }
 
-    protected void sendBroadcastToAll(Intent intent) {
+    private void sendBroadcastToAll(Intent intent) {
         final long ident = Binder.clearCallingIdentity();
         try {
             mContext.sendBroadcastAsUser(intent, UserHandle.ALL);

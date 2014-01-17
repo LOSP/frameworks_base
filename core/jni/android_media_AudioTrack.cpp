@@ -1,7 +1,4 @@
 /*
- * Copyright (c) 2013, The Linux Foundation. All rights reserved.
- * Not a Contribution.
- *
  * Copyright (C) 2008 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -43,17 +40,6 @@ static const char* const kClassPathName = "android/media/AudioTrack";
 struct fields_t {
     // these fields provide access from C++ to the...
     jmethodID postNativeEventInJava; //... event post callback method
-    // FIX ME: Are the below int type members used anywhere??
-    int       STREAM_VOICE_CALL;     //...  stream type constants
-    int       STREAM_SYSTEM;         //...  stream type constants
-    int       STREAM_RING;           //...  stream type constants
-    int       STREAM_MUSIC;          //...  stream type constants
-    int       STREAM_ALARM;          //...  stream type constants
-    int       STREAM_NOTIFICATION;   //...  stream type constants
-    int       STREAM_BLUETOOTH_SCO;  //...  stream type constants
-    int       STREAM_DTMF;           //...  stream type constants
-    int       MODE_STREAM;           //...  memory mode
-    int       MODE_STATIC;           //...  memory mode
     jfieldID  nativeTrackInJavaObj;  // stores in Java the native AudioTrack object
     jfieldID  jniData;      // stores in Java additional resources used by the native AudioTrack
 };
@@ -72,12 +58,6 @@ struct audiotrack_callback_cookie {
 // keep these values in sync with AudioFormat.java
 #define ENCODING_PCM_16BIT 2
 #define ENCODING_PCM_8BIT  3
-#define ENCODING_AMRNB     100
-#define ENCODING_AMRWB     101
-#define ENCODING_EVRC      102
-#define ENCODING_EVRCB     103
-#define ENCODING_EVRCWB    104
-#define ENCODING_EVRCNW    105
 
 // ----------------------------------------------------------------------------
 class AudioTrackJniStorage {
@@ -214,30 +194,6 @@ static sp<AudioTrack> setAudioTrack(JNIEnv* env, jobject thiz, const sp<AudioTra
 }
 
 // ----------------------------------------------------------------------------
-int getformat(int audioformat)
-{
-    switch (audioformat) {
-    case ENCODING_PCM_16BIT:
-        return AUDIO_FORMAT_PCM_16_BIT;
-    case ENCODING_PCM_8BIT:
-        return AUDIO_FORMAT_PCM_8_BIT;
-    case ENCODING_AMRNB:
-        return AUDIO_FORMAT_AMR_NB;
-    case ENCODING_AMRWB:
-        return AUDIO_FORMAT_AMR_WB;
-    case ENCODING_EVRC:
-        return AUDIO_FORMAT_EVRC;
-    case ENCODING_EVRCB:
-        return AUDIO_FORMAT_EVRCB;
-    case ENCODING_EVRCWB:
-        return AUDIO_FORMAT_EVRCWB;
-    case ENCODING_EVRCNW:
-        return AUDIO_FORMAT_EVRCNW;
-    default:
-        return AUDIO_FORMAT_PCM_8_BIT;
-    }
-}
-
 static int
 android_media_AudioTrack_native_setup(JNIEnv *env, jobject thiz, jobject weak_this,
         jint streamType, jint sampleRateInHertz, jint javaChannelMask,
@@ -279,7 +235,6 @@ android_media_AudioTrack_native_setup(JNIEnv *env, jobject thiz, jobject weak_th
     case AUDIO_STREAM_NOTIFICATION:
     case AUDIO_STREAM_BLUETOOTH_SCO:
     case AUDIO_STREAM_DTMF:
-    case AUDIO_STREAM_INCALL_MUSIC:
         atStreamType = (audio_stream_type_t) streamType;
         break;
     default:
@@ -289,14 +244,8 @@ android_media_AudioTrack_native_setup(JNIEnv *env, jobject thiz, jobject weak_th
 
     // check the format.
     // This function was called from Java, so we compare the format against the Java constants
-    if ((audioFormat != ENCODING_PCM_16BIT)
-        && (audioFormat != ENCODING_PCM_8BIT)
-        && (audioFormat != ENCODING_AMRNB)
-        && (audioFormat != ENCODING_AMRWB)
-        && (audioFormat != ENCODING_EVRC)
-        && (audioFormat != ENCODING_EVRCB)
-        && (audioFormat != ENCODING_EVRCWB)
-        && (audioFormat != ENCODING_EVRCNW)) {
+    if ((audioFormat != ENCODING_PCM_16BIT) && (audioFormat != ENCODING_PCM_8BIT)) {
+
         ALOGE("Error creating AudioTrack: unsupported audio format.");
         return AUDIOTRACK_ERROR_SETUP_INVALIDFORMAT;
     }
@@ -315,12 +264,9 @@ android_media_AudioTrack_native_setup(JNIEnv *env, jobject thiz, jobject weak_th
     }
 
     // compute the frame count
-    int bytesPerSample;
-    if(audioFormat == ENCODING_PCM_16BIT)
-        bytesPerSample = 2;
-    else
-        bytesPerSample = 1;
-    audio_format_t format = (audio_format_t)getformat(audioFormat);
+    int bytesPerSample = audioFormat == ENCODING_PCM_16BIT ? 2 : 1;
+    audio_format_t format = audioFormat == ENCODING_PCM_16BIT ?
+            AUDIO_FORMAT_PCM_16_BIT : AUDIO_FORMAT_PCM_8_BIT;
     int frameCount = buffSizeInBytes / (nbChannels * bytesPerSample);
 
     jclass clazz = env->GetObjectClass(thiz);
@@ -573,13 +519,7 @@ jint writeToTrack(const sp<AudioTrack>& track, jint audioFormat, jbyte* data,
             written = 0;
         }
     } else {
-        if ((audioFormat == ENCODING_PCM_16BIT)
-        || (audioFormat == ENCODING_AMRNB)
-        || (audioFormat == ENCODING_AMRWB)
-        || (audioFormat == ENCODING_EVRC)
-        || (audioFormat == ENCODING_EVRCB)
-        || (audioFormat == ENCODING_EVRCWB)
-        || (audioFormat == ENCODING_EVRCNW)) {
+        if (audioFormat == ENCODING_PCM_16BIT) {
             // writing to shared memory, check for capacity
             if ((size_t)sizeInBytes > track->sharedBuffer()->size()) {
                 sizeInBytes = track->sharedBuffer()->size();
@@ -866,7 +806,6 @@ static jint android_media_AudioTrack_get_output_sample_rate(JNIEnv *env,  jobjec
     case AUDIO_STREAM_NOTIFICATION:
     case AUDIO_STREAM_BLUETOOTH_SCO:
     case AUDIO_STREAM_DTMF:
-    case AUDIO_STREAM_INCALL_MUSIC:
         nativeStreamType = (audio_stream_type_t) javaStreamType;
         break;
     default:

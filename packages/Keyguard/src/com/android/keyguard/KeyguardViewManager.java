@@ -81,7 +81,6 @@ public class KeyguardViewManager {
 
     private boolean mScreenOn = false;
     private LockPatternUtils mLockPatternUtils;
-    private int mPanelOrientation = 0;
 
     private KeyguardUpdateMonitorCallback mBackgroundChanger = new KeyguardUpdateMonitorCallback() {
         @Override
@@ -109,8 +108,6 @@ public class KeyguardViewManager {
         mViewManager = viewManager;
         mViewMediatorCallback = callback;
         mLockPatternUtils = lockPatternUtils;
-        mPanelOrientation =
-                SystemProperties.getInt("persist.panel.orientation", 0) / 90;
     }
 
     /**
@@ -121,12 +118,6 @@ public class KeyguardViewManager {
         if (DEBUG) Log.d(TAG, "show(); mKeyguardView==" + mKeyguardView);
 
         boolean enableScreenRotation = shouldEnableScreenRotation();
-
-        if(mPanelOrientation != 0) {
-            // override the enableScreen Rotation value, if the panel
-            // orientation is not portrait.
-            enableScreenRotation = false;
-        }
 
         maybeCreateKeyguardLocked(enableScreenRotation, false, options);
         maybeEnableScreenRotation(enableScreenRotation);

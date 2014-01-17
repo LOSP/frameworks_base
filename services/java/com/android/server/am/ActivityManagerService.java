@@ -1,7 +1,5 @@
 /*
  * Copyright (C) 2006-2008 The Android Open Source Project
- * Copyright (c) 2010-2013, The Linux Foundation. All rights reserved.
- * Not a Contribution.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,7 +38,6 @@ import com.android.internal.os.BackgroundThread;
 import com.android.internal.os.BatteryStatsImpl;
 import com.android.internal.os.ProcessCpuTracker;
 import com.android.internal.os.TransferPipe;
-import com.android.internal.telephony.cat.AppInterface;
 import com.android.internal.util.FastPrintWriter;
 import com.android.internal.util.FastXmlSerializer;
 import com.android.internal.util.MemInfoReader;
@@ -174,8 +171,6 @@ import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.WindowManager;
-import android.view.WindowManagerPolicy;
-import android.content.BroadcastReceiver;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -4107,23 +4102,6 @@ public final class ActivityManagerService extends ActivityManagerNative
                     annotation != null ? "ANR " + annotation : "ANR",
                     info.toString());
 
-            String tracesPath = SystemProperties.get("dalvik.vm.stack-trace-file", null);
-            if (tracesPath != null && tracesPath.length() != 0) {
-                File traceRenameFile = new File(tracesPath);
-                String newTracesPath;
-                int lpos = tracesPath.lastIndexOf (".");
-                if (-1 != lpos)
-                    newTracesPath = tracesPath.substring (0, lpos) + "_" + app.processName + tracesPath.substring (lpos);
-                else
-                    newTracesPath = tracesPath + "_" + app.processName;
-                traceRenameFile.renameTo(new File(newTracesPath));
-
-                Process.sendSignal(app.pid, 6);
-                SystemClock.sleep(1000);
-                Process.sendSignal(app.pid, 6);
-                SystemClock.sleep(1000);
-            }
-
             // Bring up the infamous App Not Responding dialog
             Message msg = Message.obtain();
             HashMap<String, Object> map = new HashMap<String, Object>();
@@ -5208,7 +5186,7 @@ public final class ActivityManagerService extends ActivityManagerNative
                                 },
                                 0, null, null,
                                 android.Manifest.permission.RECEIVE_BOOT_COMPLETED,
-                                AppOpsManager.OP_BOOT_COMPLETED, true, false, MY_PID, Process.SYSTEM_UID,
+                                AppOpsManager.OP_NONE, true, false, MY_PID, Process.SYSTEM_UID,
                                 userId);
                     }
                 }
@@ -8530,10 +8508,6 @@ public final class ActivityManagerService extends ActivityManagerNative
     public void setActivityController(IActivityController controller) {
         enforceCallingPermission(android.Manifest.permission.SET_ACTIVITY_WATCHER,
                 "setActivityController()");
-
-        int pid = controller == null ? 0 : Binder.getCallingPid();
-        Watchdog.getInstance().processStarted("ActivityController", pid);
-
         synchronized (this) {
             mController = controller;
             Watchdog.getInstance().setActivityController(controller);
@@ -9339,12 +9313,10 @@ public final class ActivityManagerService extends ActivityManagerNative
             // we won't trample on them any more.
             mProcessesReady = true;
         }
-
+        
         Slog.i(TAG, "System now ready");
         EventLog.writeEvent(EventLogTags.BOOT_PROGRESS_AMS_READY,
             SystemClock.uptimeMillis());
-        IntentFilter bootFilter = new IntentFilter(AppInterface.CHECK_SCREEN_IDLE_ACTION);
-        mContext.registerReceiver(new ScreenStatusReceiver(), bootFilter);
 
         synchronized(this) {
             // Make sure we have no pre-ready processes sitting around.
@@ -9453,26 +9425,6 @@ public final class ActivityManagerService extends ActivityManagerNative
             sendUserSwitchBroadcastsLocked(-1, mCurrentUserId);
         }
     }
-
-    class ScreenStatusReceiver extends BroadcastReceiver {
-
-        @Override
-        public void onReceive(Context context, Intent intent) {
-            if (intent == null || intent.getAction() == null) {
-                return;
-            }
-            if (intent.getAction().equals(AppInterface.CHECK_SCREEN_IDLE_ACTION)) {
-                Slog.i(TAG, "ICC has requested idle screen status");
-                Intent idleScreenIntent = new Intent(AppInterface.CAT_IDLE_SCREEN_ACTION);
-                boolean isIdle = getFocusedStack().isHomeStack();
-                idleScreenIntent.putExtra("SCREEN_IDLE", isIdle);
-                Slog.i(TAG, "Broadcasting Home idle screen Intent"
-                        + " SCREEN_IDLE is " + isIdle);
-                mContext.sendBroadcast(idleScreenIntent);
-            }
-        }
-    }
-
 
     private boolean makeAppCrashingLocked(ProcessRecord app,
             String shortMsg, String longMsg, String stackTrace) {
@@ -16342,7 +16294,7 @@ public final class ActivityManagerService extends ActivityManagerNative
                 intent.addFlags(Intent.FLAG_RECEIVER_NO_ABORT);
                 broadcastIntentLocked(null, null, intent,
                         null, null, 0, null, null,
-                        android.Manifest.permission.RECEIVE_BOOT_COMPLETED, AppOpsManager.OP_BOOT_COMPLETED,
+                        android.Manifest.permission.RECEIVE_BOOT_COMPLETED, AppOpsManager.OP_NONE,
                         true, false, MY_PID, Process.SYSTEM_UID, userId);
             }
             int num = mUserLru.size();

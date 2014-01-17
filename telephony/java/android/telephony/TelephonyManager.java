@@ -1,6 +1,4 @@
 /*
- * Copyright (c) 2012-2013 The Linux Foundation. All rights reserved.
- * Not a Contribution.
  * Copyright (C) 2008 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -26,8 +24,6 @@ import android.os.RemoteException;
 import android.os.ServiceManager;
 import android.os.SystemProperties;
 import android.telephony.Rlog;
-import android.provider.Settings;
-import android.provider.Settings.SettingNotFoundException;
 
 import com.android.internal.telephony.IPhoneSubInfo;
 import com.android.internal.telephony.ITelephony;
@@ -437,22 +433,12 @@ public class TelephonyManager {
         case RILConstants.NETWORK_MODE_GSM_UMTS:
         case RILConstants.NETWORK_MODE_LTE_GSM_WCDMA:
         case RILConstants.NETWORK_MODE_LTE_WCDMA:
-        case RILConstants.NETWORK_MODE_TD_SCDMA_ONLY:
-        case RILConstants.NETWORK_MODE_TD_SCDMA_WCDMA:
-        case RILConstants.NETWORK_MODE_TD_SCDMA_LTE:
-        case RILConstants.NETWORK_MODE_TD_SCDMA_GSM:
-        case RILConstants.NETWORK_MODE_TD_SCDMA_GSM_LTE:
-        case RILConstants.NETWORK_MODE_TD_SCDMA_GSM_WCDMA:
-        case RILConstants.NETWORK_MODE_TD_SCDMA_WCDMA_LTE:
-        case RILConstants.NETWORK_MODE_TD_SCDMA_GSM_WCDMA_LTE:
+        case RILConstants.NETWORK_MODE_LTE_CMDA_EVDO_GSM_WCDMA:
             return PhoneConstants.PHONE_TYPE_GSM;
 
         // Use CDMA Phone for the global mode including CDMA
         case RILConstants.NETWORK_MODE_GLOBAL:
         case RILConstants.NETWORK_MODE_LTE_CDMA_EVDO:
-        case RILConstants.NETWORK_MODE_LTE_CMDA_EVDO_GSM_WCDMA:
-        case RILConstants.NETWORK_MODE_TD_SCDMA_CDMA_EVDO_GSM_WCDMA:
-        case RILConstants.NETWORK_MODE_TD_SCDMA_LTE_CDMA_EVDO_GSM_WCDMA:
             return PhoneConstants.PHONE_TYPE_CDMA;
 
         case RILConstants.NETWORK_MODE_LTE_ONLY:
@@ -557,8 +543,7 @@ public class TelephonyManager {
      * on a CDMA network).
      */
     public String getNetworkOperatorName() {
-        return getTelephonyProperty(TelephonyProperties.PROPERTY_OPERATOR_ALPHA,
-                getDefaultSubscription(), "");
+        return SystemProperties.get(TelephonyProperties.PROPERTY_OPERATOR_ALPHA);
     }
 
     /**
@@ -569,8 +554,7 @@ public class TelephonyManager {
      * on a CDMA network).
      */
     public String getNetworkOperator() {
-        return getTelephonyProperty(TelephonyProperties.PROPERTY_OPERATOR_NUMERIC,
-                getDefaultSubscription(), "");
+        return SystemProperties.get(TelephonyProperties.PROPERTY_OPERATOR_NUMERIC);
     }
 
     /**
@@ -580,8 +564,7 @@ public class TelephonyManager {
      * Availability: Only when user registered to a network.
      */
     public boolean isNetworkRoaming() {
-        return "true".equals(getTelephonyProperty(TelephonyProperties.PROPERTY_OPERATOR_ISROAMING,
-                getDefaultSubscription(), "false"));
+        return "true".equals(SystemProperties.get(TelephonyProperties.PROPERTY_OPERATOR_ISROAMING));
     }
 
     /**
@@ -593,35 +576,7 @@ public class TelephonyManager {
      * on a CDMA network).
      */
     public String getNetworkCountryIso() {
-        return getTelephonyProperty(TelephonyProperties.PROPERTY_OPERATOR_ISO_COUNTRY,
-                getDefaultSubscription(), "");
-    }
-
-    /**
-     * Gets the telephony Default Subscription.
-     *
-     * @hide
-     */
-    public static int getDefaultSubscription() {
-        return  SystemProperties.getInt(TelephonyProperties.PROPERTY_DEFAULT_SUBSCRIPTION, 0);
-    }
-
-
-    /**
-     * Gets the telephony property.
-     *
-     * @hide
-     */
-    public static String getTelephonyProperty(String property, int index, String defaultVal) {
-        String propVal = null;
-        String prop = SystemProperties.get(property);
-         if ((prop != null) && (prop.length() > 0)) {
-            String values[] = prop.split(",");
-            if ((index >= 0) && (index < values.length) && (values[index] != null)) {
-                propVal = values[index];
-            }
-        }
-        return propVal == null ? defaultVal : propVal;
+        return SystemProperties.get(TelephonyProperties.PROPERTY_OPERATOR_ISO_COUNTRY);
     }
 
     /** Network type is unknown */
@@ -656,11 +611,6 @@ public class TelephonyManager {
     public static final int NETWORK_TYPE_EHRPD = 14;
     /** Current network is HSPA+ */
     public static final int NETWORK_TYPE_HSPAP = 15;
-    /** Current network is GSM {@hide} */
-    public static final int NETWORK_TYPE_GSM = 16;
-    /** Current network is TD_SCDMA {@hide} */
-    public static final int NETWORK_TYPE_TD_SCDMA = 17;
-
 
     /**
      * @return the NETWORK_TYPE_xxxx for current data connection.
@@ -690,7 +640,6 @@ public class TelephonyManager {
      * @see #NETWORK_TYPE_LTE
      * @see #NETWORK_TYPE_EHRPD
      * @see #NETWORK_TYPE_HSPAP
-     * @see #NETWORK_TYPE_TD_SCDMA
      *
      * @hide
      */
@@ -753,7 +702,6 @@ public class TelephonyManager {
     public static int getNetworkClass(int networkType) {
         switch (networkType) {
             case NETWORK_TYPE_GPRS:
-            case NETWORK_TYPE_GSM:
             case NETWORK_TYPE_EDGE:
             case NETWORK_TYPE_CDMA:
             case NETWORK_TYPE_1xRTT:
@@ -768,7 +716,6 @@ public class TelephonyManager {
             case NETWORK_TYPE_EVDO_B:
             case NETWORK_TYPE_EHRPD:
             case NETWORK_TYPE_HSPAP:
-            case NETWORK_TYPE_TD_SCDMA:
                 return NETWORK_CLASS_3_G;
             case NETWORK_TYPE_LTE:
                 return NETWORK_CLASS_4_G;
@@ -821,10 +768,6 @@ public class TelephonyManager {
                 return "iDEN";
             case NETWORK_TYPE_HSPAP:
                 return "HSPA+";
-            case NETWORK_TYPE_GSM:
-                return "GSM";
-            case NETWORK_TYPE_TD_SCDMA:
-                return "TD-SCDMA";
             default:
                 return "UNKNOWN";
         }
@@ -851,10 +794,6 @@ public class TelephonyManager {
     public static final int SIM_STATE_NETWORK_LOCKED = 4;
     /** SIM card state: Ready */
     public static final int SIM_STATE_READY = 5;
-    /** SIM card state: SIM Card Error, Sim Card is present but faulty
-     *@hide
-     */
-    public static final int SIM_STATE_CARD_IO_ERROR = 6;
 
     /**
      * @return true if a ICC card is present
@@ -881,11 +820,9 @@ public class TelephonyManager {
      * @see #SIM_STATE_PUK_REQUIRED
      * @see #SIM_STATE_NETWORK_LOCKED
      * @see #SIM_STATE_READY
-     * @see #SIM_STATE_CARD_IO_ERROR
      */
     public int getSimState() {
-        String prop = getTelephonyProperty(TelephonyProperties.PROPERTY_SIM_STATE,
-                getDefaultSubscription(), "");
+        String prop = SystemProperties.get(TelephonyProperties.PROPERTY_SIM_STATE);
         if ("ABSENT".equals(prop)) {
             return SIM_STATE_ABSENT;
         }
@@ -895,14 +832,11 @@ public class TelephonyManager {
         else if ("PUK_REQUIRED".equals(prop)) {
             return SIM_STATE_PUK_REQUIRED;
         }
-        else if ("PERSO_LOCKED".equals(prop)) {
+        else if ("NETWORK_LOCKED".equals(prop)) {
             return SIM_STATE_NETWORK_LOCKED;
         }
         else if ("READY".equals(prop)) {
             return SIM_STATE_READY;
-        }
-        else if ("CARD_IO_ERROR".equals(prop)) {
-            return SIM_STATE_CARD_IO_ERROR;
         }
         else {
             return SIM_STATE_UNKNOWN;
@@ -918,8 +852,7 @@ public class TelephonyManager {
      * @see #getSimState
      */
     public String getSimOperator() {
-        return getTelephonyProperty(TelephonyProperties.PROPERTY_ICC_OPERATOR_NUMERIC,
-                getDefaultSubscription(), "");
+        return SystemProperties.get(TelephonyProperties.PROPERTY_ICC_OPERATOR_NUMERIC);
     }
 
     /**
@@ -930,16 +863,14 @@ public class TelephonyManager {
      * @see #getSimState
      */
     public String getSimOperatorName() {
-        return getTelephonyProperty(TelephonyProperties.PROPERTY_ICC_OPERATOR_ALPHA,
-                getDefaultSubscription(), "");
+        return SystemProperties.get(TelephonyProperties.PROPERTY_ICC_OPERATOR_ALPHA);
     }
 
     /**
      * Returns the ISO country code equivalent for the SIM provider's country code.
      */
     public String getSimCountryIso() {
-        return getTelephonyProperty(TelephonyProperties.PROPERTY_ICC_OPERATOR_ISO_COUNTRY,
-                getDefaultSubscription(), "");
+        return SystemProperties.get(TelephonyProperties.PROPERTY_ICC_OPERATOR_ISO_COUNTRY);
     }
 
     /**

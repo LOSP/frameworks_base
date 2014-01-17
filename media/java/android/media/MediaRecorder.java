@@ -1,7 +1,4 @@
 /*
- * Copyright (c) 2013, The Linux Foundation. All rights reserved.
- * Not a Contribution.
- *
  * Copyright (C) 2007 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -204,11 +201,6 @@ public class MediaRecorder
          */
         public static final int REMOTE_SUBMIX = 8;
 
-        /** @hide */
-        public static final int FM_RX = 9;
-
-        /** @hide */
-        public static final int FM_RX_A2DP = 10;
         /**
          * Audio source for preemptible, low-priority software hotword detection
          * It presents the same gain and pre processing tuning as {@link #VOICE_RECOGNITION}.
@@ -279,15 +271,6 @@ public class MediaRecorder
 
         /** @hide H.264/AAC data encapsulated in MPEG2/TS */
         public static final int OUTPUT_FORMAT_MPEG2TS = 8;
-
-        /** @hide QCP file format */
-        public static final int QCP = 9;
-
-        /** @hide 3GPP2 media file format*/
-        public static final int THREE_GPP2 = 10;
-
-        /** @hide WAVE media file format*/
-        public static final int WAVE = 11;
     };
 
     /**
@@ -310,12 +293,6 @@ public class MediaRecorder
         public static final int HE_AAC = 4;
         /** Enhanced Low Delay AAC (AAC-ELD) audio codec */
         public static final int AAC_ELD = 5;
-        /** @hide EVRC audio codec */
-        public static final int EVRC = 6;
-        /** @hide QCELP audio codec */
-        public static final int QCELP =7;
-        /** @hide Linear PCM audio codec */
-        public static final int LPCM =8;
     }
 
     /**
@@ -351,7 +328,7 @@ public class MediaRecorder
      * @see android.media.MediaRecorder.AudioSource
      */
     public static final int getAudioSourceMax() {
-        return AudioSource.FM_RX_A2DP;
+        return AudioSource.REMOTE_SUBMIX;
     }
 
     /**
@@ -383,10 +360,10 @@ public class MediaRecorder
         setVideoEncodingBitRate(profile.videoBitRate);
         setVideoEncoder(profile.videoCodec);
         if (profile.quality >= CamcorderProfile.QUALITY_TIME_LAPSE_LOW &&
-             profile.quality <= CamcorderProfile.QUALITY_TIME_LAPSE_WQVGA) {
+             profile.quality <= CamcorderProfile.QUALITY_TIME_LAPSE_QVGA) {
             // Nothing needs to be done. Call to setCaptureRate() enables
             // time lapse video recording.
-        } else if (profile.audioCodec >= 0) {
+        } else {
             setAudioEncodingBitRate(profile.audioBitRate);
             setAudioChannels(profile.audioChannels);
             setAudioSamplingRate(profile.audioSampleRate);
