@@ -295,7 +295,7 @@ LOCAL_INTERMEDIATE_SOURCES := \
 			$(framework_res_source_path)/com/android/internal/R.java
 
 LOCAL_NO_STANDARD_LIBRARIES := true
-LOCAL_JAVA_LIBRARIES := bouncycastle conscrypt core core-junit ext okhttp org.codeaurora.Performance
+LOCAL_JAVA_LIBRARIES := bouncycastle conscrypt core core-junit ext okhttp
 
 LOCAL_MODULE := framework-base
 
