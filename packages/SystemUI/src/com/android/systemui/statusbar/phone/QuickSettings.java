@@ -40,6 +40,7 @@ import android.graphics.drawable.Drawable;
 import android.hardware.display.DisplayManager;
 import android.media.MediaRouter;
 import android.net.wifi.WifiManager;
+import android.net.ConnectivityManager;
 import android.os.AsyncTask;
 import android.os.Handler;
 import android.os.RemoteException;
@@ -86,6 +87,9 @@ class QuickSettings {
     public static final boolean SHOW_IME_TILE = false;
 
     public static final boolean LONG_PRESS_TOGGLES = true;
+    
+    private static final int CONNECTION_ENABLED = -100;
+    private static final int CONNECTION_DISABLED = -101;
 
     private Context mContext;
     private PanelBar mBar;
@@ -97,6 +101,7 @@ class QuickSettings {
     private BluetoothState mBluetoothState;
     private BluetoothAdapter mBluetoothAdapter;
     private WifiManager mWifiManager;
+    private ConnectivityManager mCm;
 
     private BluetoothController mBluetoothController;
     private RotationLockController mRotationLockController;
@@ -430,35 +435,53 @@ class QuickSettings {
 
         if (mModel.deviceHasMobileData()) {
             // RSSI
+            mCm = (ConnectivityManager) mContext.getSystemService(Context.CONNECTIVITY_SERVICE);
             QuickSettingsTileView rssiTile = (QuickSettingsTileView)
                     inflater.inflate(R.layout.quick_settings_tile, parent, false);
             rssiTile.setContent(R.layout.quick_settings_tile_rssi, inflater);
+            
+            if (!mCm.getMobileDataEnabled()) {
+                // Initialize state
+                updateRssiOverlay(rssiTile, CONNECTION_DISABLED);
+            }
+            
             rssiTile.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
-                    Intent intent = new Intent();
-                    intent.setComponent(new ComponentName(
-                            "com.android.settings",
-                            "com.android.settings.Settings$DataUsageSummaryActivity"));
-                    startSettingsActivity(intent);
+                    if (!mCm.getMobileDataEnabled()) {
+                        updateRssiOverlay(v, CONNECTION_ENABLED);
+                        mCm.setMobileDataEnabled(true);
+                    } else {
+                        updateRssiOverlay(v, CONNECTION_DISABLED); // Show an "x" on when data disabled
+                        mCm.setMobileDataEnabled(false);
+                    }
                 }
             });
+            
+            if (LONG_PRESS_TOGGLES) {
+                rssiTile.setOnLongClickListener(new View.OnLongClickListener() {
+                    @Override
+                    public boolean onLongClick(View v) {
+                        Intent intent = new Intent();
+                        intent.setComponent(new ComponentName(
+                                "com.android.settings",
+                                "com.android.settings.Settings$DataUsageSummaryActivity"));
+                        startSettingsActivity(intent);
+                        return true;
+                    }
+                });
+            }
             mModel.addRSSITile(rssiTile, new NetworkActivityCallback() {
                 @Override
                 public void refreshView(QuickSettingsTileView view, State state) {
                     RSSIState rssiState = (RSSIState) state;
-                    ImageView iv = (ImageView) view.findViewById(R.id.rssi_image);
-                    ImageView iov = (ImageView) view.findViewById(R.id.rssi_overlay_image);
+                    updateRssiOverlay(view, rssiState.dataTypeIconId);
                     TextView tv = (TextView) view.findViewById(R.id.rssi_textview);
+                    ImageView iv = (ImageView) view.findViewById(R.id.rssi_image);
+ 
                     // Force refresh
                     iv.setImageDrawable(null);
                     iv.setImageResource(rssiState.signalIconId);
-
-                    if (rssiState.dataTypeIconId > 0) {
-                        iov.setImageResource(rssiState.dataTypeIconId);
-                    } else {
-                        iov.setImageDrawable(null);
-                    }
                     setActivity(view, rssiState);
 
                     tv.setText(state.label);
@@ -838,6 +861,19 @@ class QuickSettings {
 
     private void applyLocationEnabledStatus() {
         mModel.onLocationSettingsChanged(mLocationController.isLocationEnabled());
+    }
+
+    private void updateRssiOverlay(View view, int dataTypeIconId) {
+        ImageView iov = (ImageView) view.findViewById(R.id.rssi_overlay_image);
+
+        if (dataTypeIconId > 0) {
+            iov.setImageResource(dataTypeIconId);
+        } else if  (dataTypeIconId == CONNECTION_DISABLED) {
+            iov.setImageResource(R.drawable.ic_qs_signal_data_off);
+        } else if (mCm.getMobileDataEnabled()) {
+            iov.setImageDrawable(null);
+        }
+
     }
 
     void reloadUserInfo() {
