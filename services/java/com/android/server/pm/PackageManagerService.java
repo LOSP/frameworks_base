@@ -1308,12 +1308,9 @@ public class PackageManagerService extends IPackageManager.Stub {
         mVendorOverlayInstallObserver = new AppDirObserver(
             vendorOverlayDir.getPath(), OBSERVER_EVENTS, true, false);
         mVendorOverlayInstallObserver.startWatching();
-        scanDir(vendorOverlayDir, PackageParser.PARSE_IS_SYSTEM
+        scanDirLI(vendorOverlayDir, PackageParser.PARSE_IS_SYSTEM
                 | PackageParser.PARSE_IS_SYSTEM_DIR, scanMode | SCAN_TRUSTED_OVERLAY, 0);
-
-        // Find base frameworks (resource packages without code).
-        mFrameworkInstallObserver = new AppDirObserver(
-
+         
             // Collected privileged system packages.
             File privilegedAppDir = new File(Environment.getRootDirectory(), "priv-app");
             mPrivilegedInstallObserver = new AppDirObserver(
