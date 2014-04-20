@@ -812,13 +812,6 @@ class ServerThread {
             } catch (Throwable e) {
                 reportWtf("starting Print Service", e);
             }
-            
-            try {
-                Slog.i(TAG, "AssetRedirectionManager Service");
-                ServiceManager.addService("assetredirection", new AssetRedirectionManagerService(context));
-            } catch (Throwable e) {
-                Slog.e(TAG, "Failure starting AssetRedirectionManager Service", e);
-            }
 
             try {
                 Slog.i(TAG, "Theme Service");
