@@ -1266,6 +1266,10 @@ public class PackageParser {
             }
         }
 
+        // Temporary: Force install to internal.
+        // FIXME: Install fail when installing to sdcard
+        installLocation = PackageInfo.INSTALL_LOCATION_INTERNAL_ONLY;
+        
         return new PackageLite(pkgName.intern(), versionCode, installLocation, verifiers, isTheme);
     }
 
