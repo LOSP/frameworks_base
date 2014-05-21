@@ -20,15 +20,8 @@ import android.app.ActivityManager;
 import android.app.ActivityManagerNative;
 import android.app.IActivityManager;
 import android.app.WallpaperManager;
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
 import android.content.BroadcastReceiver;
 import android.content.ContentResolver;
->>>>>>> 64348cc... CM11 Themes: Clear wallpaper mixnmatch entry on external change
-=======
-import android.content.ContentResolver;
->>>>>>> c65b0e6... CM11 Themes: Allow defining a custom default theme [1/3]
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
@@ -95,6 +88,7 @@ public class ThemeService extends IThemeService.Stub {
 
     private class ThemeWorkerHandler extends Handler {
         private static final int MESSAGE_CHANGE_THEME = 1;
+        private static final int MESSAGE_APPLY_DEFAULT_THEME = 2;
 
         public ThemeWorkerHandler(Looper looper) {
             super(looper);
@@ -106,6 +100,9 @@ public class ThemeService extends IThemeService.Stub {
                 case MESSAGE_CHANGE_THEME:
                     final ThemeData themeData = (ThemeData) msg.obj;
                     doApplyTheme(themeData.pkgName, themeData.components);
+                    break;
+                case MESSAGE_APPLY_DEFAULT_THEME:
+                    doApplyDefaultTheme();
                     break;
                 default:
                     Log.w(TAG, "Unknown message " + msg.what);
@@ -140,21 +137,12 @@ public class ThemeService extends IThemeService.Stub {
         ThemeUtils.createRingtoneDirIfNotExists();
     }
 
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
     public void systemRunning() {
         // listen for wallpaper changes
         IntentFilter filter = new IntentFilter(Intent.ACTION_WALLPAPER_CHANGED);
         mContext.registerReceiver(mWallpaperChangeReceiver, filter);
     }
-
->>>>>>> 64348cc... CM11 Themes: Clear wallpaper mixnmatch entry on external change
-=======
-    public void systemRunning() {
-    }
-
->>>>>>> c65b0e6... CM11 Themes: Allow defining a custom default theme [1/3]
+    
     private void doApplyTheme(String pkgName, List<String> components) {
         synchronized(this) {
             mPkgName = pkgName;
@@ -227,6 +215,42 @@ public class ThemeService extends IThemeService.Stub {
         killLaunchers();
 
         postFinish(true, pkgName);
+    }
+
+    private void doApplyDefaultTheme() {
+        final ContentResolver resolver = mContext.getContentResolver();
+        final String defaultThemePkg = Settings.Secure.getString(resolver,
+                Settings.Secure.DEFAULT_THEME_PACKAGE);
+        final boolean shouldApply = !TextUtils.isEmpty(defaultThemePkg) &&
+                Settings.Secure.getInt(resolver,
+                        Settings.Secure.DEFAULT_THEME_APPLIED_ON_FIRST_BOOT, 0) == 0;
+        if (shouldApply) {
+            String defaultThemeComponents = Settings.Secure.getString(resolver,
+                    Settings.Secure.DEFAULT_THEME_COMPONENTS);
+            List<String> components;
+            if (TextUtils.isEmpty(defaultThemeComponents)) {
+                components = new ArrayList<String>(9);
+                components.add(ThemesContract.ThemesColumns.MODIFIES_FONTS);
+                components.add(ThemesContract.ThemesColumns.MODIFIES_LAUNCHER);
+                components.add(ThemesContract.ThemesColumns.MODIFIES_ALARMS);
+                components.add(ThemesContract.ThemesColumns.MODIFIES_BOOT_ANIM);
+                components.add(ThemesContract.ThemesColumns.MODIFIES_ICONS);
+                components.add(ThemesContract.ThemesColumns.MODIFIES_LOCKSCREEN);
+                components.add(ThemesContract.ThemesColumns.MODIFIES_NOTIFICATIONS);
+                components.add(ThemesContract.ThemesColumns.MODIFIES_OVERLAYS);
+                components.add(ThemesContract.ThemesColumns.MODIFIES_RINGTONES);
+            } else {
+                components = new ArrayList<String>(
+                        Arrays.asList(defaultThemeComponents.split("\\|")));
+            }
+            try {
+                requestThemeChange(defaultThemePkg, components);
+                Settings.Secure.putInt(resolver,
+                        Settings.Secure.DEFAULT_THEME_APPLIED_ON_FIRST_BOOT, 1);
+            } catch (RemoteException e) {
+                Log.w(TAG, "Unable to set default theme", e);
+            }
+        }
     }
 
     private void updateProvider(List<String> components, String pkgName) {
@@ -427,11 +451,6 @@ public class ThemeService extends IThemeService.Stub {
         return true;
     }
 
-<<<<<<< HEAD
-    private void updateLockscreen() {
-        // TODO: implement actual behavior
-        sleepQuiet(100);
-=======
     private boolean updateLockscreen() {
         boolean success = false;
         if (HOLO_DEFAULT.equals(mPkgName)) {
@@ -446,27 +465,7 @@ public class ThemeService extends IThemeService.Stub {
         }
         return success;
     }
-
-    private boolean setCustomLockScreenWallpaper() {
-        try {
-            //Get input WP stream from the theme
-            Context themeCtx = mContext.createPackageContext(mPkgName, Context.CONTEXT_IGNORE_SECURITY);
-            AssetManager assetManager = themeCtx.getAssets();
-            String wpPath = ThemeUtils.getLockscreenWallpaperPath(assetManager);
-            if (wpPath == null) {
-                Log.w(TAG, "Not setting lockscreen wp because wallpaper file was not found.");
-                return false;
-            }
-            InputStream is = ThemeUtils.getInputStreamFromAsset(themeCtx, "file:///android_asset/" + wpPath);
-
-            WallpaperManager.getInstance(mContext).setKeyguardStream(is);
-        } catch (Exception e) {
-            Log.e(TAG, "There was an error setting lockscreen wp for pkg " + mPkgName, e);
-            return false;
-        }
-        return true;
->>>>>>> c65b0e6... CM11 Themes: Allow defining a custom default theme [1/3]
-    }
+ 
 
     private boolean updateWallpaper() {
         String selection = ThemesContract.ThemesColumns.PKG_NAME + "= ?";
@@ -652,6 +651,15 @@ public class ThemeService extends IThemeService.Stub {
     }
 
     @Override
+    public void applyDefaultTheme() {
+        mContext.enforceCallingOrSelfPermission(
+                Manifest.permission.ACCESS_THEME_MANAGER, null);
+        Message msg = Message.obtain();
+        msg.what = ThemeWorkerHandler.MESSAGE_APPLY_DEFAULT_THEME;
+        mHandler.sendMessage(msg);
+    }
+
+    @Override
     public boolean isThemeApplying(String pkgName) throws RemoteException {
         mContext.enforceCallingOrSelfPermission(
                 Manifest.permission.ACCESS_THEME_MANAGER, null);
@@ -697,44 +705,6 @@ public class ThemeService extends IThemeService.Stub {
         File anim = new File(SYSTEM_THEME_PATH + File.separator + "bootanimation.zip");
         if (anim.exists())
             anim.delete();
-    }
-
-    public void applyDefaultTheme() {
-        mContext.enforceCallingOrSelfPermission(
-                Manifest.permission.ACCESS_THEME_MANAGER, null);
-        final ContentResolver resolver = mContext.getContentResolver();
-        final String defaultThemePkg = Settings.Secure.getString(resolver,
-                Settings.Secure.DEFAULT_THEME_PACKAGE);
-        final boolean shouldApply = !TextUtils.isEmpty(defaultThemePkg) &&
-                Settings.Secure.getInt(resolver,
-                        Settings.Secure.DEFAULT_THEME_APPLIED_ON_FIRST_BOOT, 0) == 0;
-        if (shouldApply) {
-            String defaultThemeComponents = Settings.Secure.getString(resolver,
-                    Settings.Secure.DEFAULT_THEME_COMPONENTS);
-            List<String> components;
-            if (TextUtils.isEmpty(defaultThemeComponents)) {
-                components = new ArrayList<String>(9);
-                components.add(ThemesContract.ThemesColumns.MODIFIES_FONTS);
-                components.add(ThemesContract.ThemesColumns.MODIFIES_LAUNCHER);
-                components.add(ThemesContract.ThemesColumns.MODIFIES_ALARMS);
-                components.add(ThemesContract.ThemesColumns.MODIFIES_BOOT_ANIM);
-                components.add(ThemesContract.ThemesColumns.MODIFIES_ICONS);
-                components.add(ThemesContract.ThemesColumns.MODIFIES_LOCKSCREEN);
-                components.add(ThemesContract.ThemesColumns.MODIFIES_NOTIFICATIONS);
-                components.add(ThemesContract.ThemesColumns.MODIFIES_OVERLAYS);
-                components.add(ThemesContract.ThemesColumns.MODIFIES_RINGTONES);
-            } else {
-                components = new ArrayList<String>(
-                        Arrays.asList(defaultThemeComponents.split("\\|")));
-            }
-            try {
-                requestThemeChange(defaultThemePkg, components);
-                Settings.Secure.putInt(resolver,
-                        Settings.Secure.DEFAULT_THEME_APPLIED_ON_FIRST_BOOT, 1);
-            } catch (RemoteException e) {
-                Log.w(TAG, "Unable to set default theme", e);
-            }
-        }
     }
 
     private BroadcastReceiver mWallpaperChangeReceiver = new BroadcastReceiver() {
