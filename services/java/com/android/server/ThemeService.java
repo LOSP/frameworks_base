@@ -152,7 +152,6 @@ public class ThemeService extends IThemeService.Stub {
 >>>>>>> 64348cc... CM11 Themes: Clear wallpaper mixnmatch entry on external change
 =======
     public void systemRunning() {
-        applyDefaultThemeIfFirstBoot();
     }
 
 >>>>>>> c65b0e6... CM11 Themes: Allow defining a custom default theme [1/3]
@@ -700,7 +699,7 @@ public class ThemeService extends IThemeService.Stub {
             anim.delete();
     }
 
-    public void applyDefaultThemeIfFirstBoot() {
+    public void applyDefaultTheme() {
         mContext.enforceCallingOrSelfPermission(
                 Manifest.permission.ACCESS_THEME_MANAGER, null);
         final ContentResolver resolver = mContext.getContentResolver();
