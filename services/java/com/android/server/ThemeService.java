@@ -20,9 +20,15 @@ import android.app.ActivityManager;
 import android.app.ActivityManagerNative;
 import android.app.IActivityManager;
 import android.app.WallpaperManager;
+<<<<<<< HEAD
+=======
+import android.content.BroadcastReceiver;
+import android.content.ContentResolver;
+>>>>>>> 64348cc... CM11 Themes: Clear wallpaper mixnmatch entry on external change
 import android.content.ContentValues;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
@@ -73,6 +79,7 @@ public class ThemeService extends IThemeService.Stub {
     private Context mContext;
     private String mPkgName;
     private int mProgress;
+    private boolean mWallpaperChangedByUs = false;
 
     private final RemoteCallbackList<IThemeChangeListener> mClients =
             new RemoteCallbackList<IThemeChangeListener>();
@@ -124,6 +131,15 @@ public class ThemeService extends IThemeService.Stub {
         ThemeUtils.createRingtoneDirIfNotExists();
     }
 
+<<<<<<< HEAD
+=======
+    public void systemRunning() {
+        // listen for wallpaper changes
+        IntentFilter filter = new IntentFilter(Intent.ACTION_WALLPAPER_CHANGED);
+        mContext.registerReceiver(mWallpaperChangeReceiver, filter);
+    }
+
+>>>>>>> 64348cc... CM11 Themes: Clear wallpaper mixnmatch entry on external change
     private void doApplyTheme(String pkgName, List<String> components) {
         synchronized(this) {
             mPkgName = pkgName;
@@ -140,7 +156,7 @@ public class ThemeService extends IThemeService.Stub {
         // TODO: provide progress updates that reflect the time needed for each component
         final int progressIncrement = 75 / components.size();
 
-        updateProvider(components);
+        updateProvider(components, mPkgName);
 
         if (components.contains(ThemesContract.ThemesColumns.MODIFIES_ICONS)) {
             updateIcons();
@@ -148,7 +164,9 @@ public class ThemeService extends IThemeService.Stub {
         }
 
         if (components.contains(ThemesContract.ThemesColumns.MODIFIES_LAUNCHER)) {
-            updateWallpaper();
+            if (updateWallpaper()) {
+                mWallpaperChangedByUs = true;
+            }
             incrementProgress(progressIncrement, pkgName);
         }
 
@@ -196,9 +214,9 @@ public class ThemeService extends IThemeService.Stub {
         postFinish(true, pkgName);
     }
 
-    private void updateProvider(List<String> components) {
+    private void updateProvider(List<String> components, String pkgName) {
         ContentValues values = new ContentValues();
-        values.put(ThemesContract.MixnMatchColumns.COL_VALUE, mPkgName);
+        values.put(ThemesContract.MixnMatchColumns.COL_VALUE, pkgName);
 
         for (String component : components) {
             String where = ThemesContract.MixnMatchColumns.COL_KEY + "=?";
@@ -629,4 +647,18 @@ public class ThemeService extends IThemeService.Stub {
         if (anim.exists())
             anim.delete();
     }
+
+    private BroadcastReceiver mWallpaperChangeReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            if (!mWallpaperChangedByUs) {
+                // In case the mixnmatch table has a mods_launcher entry, we'll clear it
+                List<String> components = new ArrayList<String>(1);
+                components.add(ThemesContract.ThemesColumns.MODIFIES_LAUNCHER);
+                updateProvider(components, "");
+            } else {
+                mWallpaperChangedByUs = false;
+            }
+        }
+    };
 }
