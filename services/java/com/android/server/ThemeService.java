@@ -453,19 +453,7 @@ public class ThemeService extends IThemeService.Stub {
     }
 
     private boolean updateLockscreen() {
-        boolean success = false;
-        if (HOLO_DEFAULT.equals(mPkgName)) {
-            WallpaperManager.getInstance(mContext).clearKeyguardWallpaper();
-            success = true;
-        } else {
-            success = setCustomLockScreenWallpaper();
-        }
-
-        if (success) {
-            mContext.sendBroadcastAsUser(new Intent(Intent.ACTION_KEYGUARD_WALLPAPER_CHANGED),
-                    UserHandle.ALL);
-        }
-        return success;
+        return true;
     }
  
 
