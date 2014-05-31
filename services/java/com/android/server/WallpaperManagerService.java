@@ -151,13 +151,6 @@ class WallpaperManagerService extends IWallpaperManager.Stub {
                                 false, mWallpaper, null);
                         saveSettingsLocked(mWallpaper);
                     }
-                } else if (mKeyguardWallpaperFile.equals(changedFile)) {
-                    notifyCallbacksLocked(mKeyguardWallpaper);
-                    if (event == CLOSE_WRITE
-                            || mKeyguardWallpaper.imageWallpaperPending) {
-                        mKeyguardWallpaper.imageWallpaperPending = false;
-                        saveSettingsLocked(mKeyguardWallpaper);
-                    }
                 } else if (WALLPAPER_INFO_TMP.equals(path) &&
                         mWallpaper.wallpaperComponent != null &&
                         !IMAGE_WALLPAPER.equals(mWallpaper.wallpaperComponent) &&
