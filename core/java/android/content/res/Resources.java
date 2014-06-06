@@ -2086,7 +2086,7 @@ public class Resources {
             ActivityInfo.CONFIG_LAYOUT_DIRECTION);
 
     public final void updateStringCache() {
-        synchronized (mTmpValue) {
+        synchronized (mAccessLock) {
             mAssets.recreateStringBlocks();
         }
     }
