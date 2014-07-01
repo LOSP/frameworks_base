@@ -129,70 +129,6 @@ public class WallpaperCropActivity extends Activity {
                         cropImageAndSetWallpaper(imageUri, null, finishActivityWhenDone);
                     }
                 });
-<<<<<<< HEAD
-=======
-        mSetWallpaperButton = findViewById(R.id.set_wallpaper_button);
-
-        // Load image in background
-        final BitmapRegionTileSource.UriBitmapSource bitmapSource =
-                new BitmapRegionTileSource.UriBitmapSource(this, imageUri, 1024);
-        mSetWallpaperButton.setVisibility(View.INVISIBLE);
-        Runnable onLoad = new Runnable() {
-            public void run() {
-                if (bitmapSource.getLoadingState() != BitmapSource.State.LOADED) {
-                    Toast.makeText(WallpaperCropActivity.this,
-                            getString(R.string.wallpaper_load_fail),
-                            Toast.LENGTH_LONG).show();
-                    finish();
-                } else {
-                    mSetWallpaperButton.setVisibility(View.VISIBLE);
-                }
-            }
-        };
-        setCropViewTileSource(bitmapSource, true, false, onLoad);
-    }
-
-    public void setCropViewTileSource(
-            final BitmapRegionTileSource.BitmapSource bitmapSource, final boolean touchEnabled,
-            final boolean moveToLeft, final Runnable postExecute) {
-        final Context context = WallpaperCropActivity.this;
-        final View progressView = findViewById(R.id.loading);
-        final AsyncTask<Void, Void, Void> loadBitmapTask = new AsyncTask<Void, Void, Void>() {
-            protected Void doInBackground(Void...args) {
-                if (!isCancelled()) {
-                    bitmapSource.loadInBackground();
-                }
-                return null;
-            }
-            protected void onPostExecute(Void arg) {
-                if (!isCancelled()) {
-                    progressView.setVisibility(View.INVISIBLE);
-                    if (bitmapSource.getLoadingState() == BitmapSource.State.LOADED) {
-                        mCropView.setTileSource(
-                                new BitmapRegionTileSource(context, bitmapSource), null);
-                        mCropView.setTouchEnabled(touchEnabled);
-                        if (moveToLeft) {
-                            mCropView.moveToLeft();
-                        }
-                    }
-                }
-                if (postExecute != null) {
-                    postExecute.run();
-                }
-            }
-        };
-        // We don't want to show the spinner every time we load an image, because that would be
-        // annoying; instead, only start showing the spinner if loading the image has taken
-        // longer than 1 sec (ie 1000 ms)
-        progressView.postDelayed(new Runnable() {
-            public void run() {
-                if (loadBitmapTask.getStatus() != AsyncTask.Status.FINISHED) {
-                    progressView.setVisibility(View.VISIBLE);
-                }
-            }
-        }, 1000);
-        loadBitmapTask.execute();
->>>>>>> android-4.4.4_r1
     }
 
     public boolean enableRotation() {
@@ -354,11 +290,8 @@ public class WallpaperCropActivity extends Activity {
         // Get the crop
         boolean ltr = mCropView.getLayoutDirection() == View.LAYOUT_DIRECTION_LTR;
 
-<<<<<<< HEAD
         Point minDims = new Point();
         Point maxDims = new Point();
-=======
->>>>>>> android-4.4.4_r1
         Display d = getWindowManager().getDefaultDisplay();
         d.getCurrentSizeRange(minDims, maxDims);
 
@@ -629,15 +562,11 @@ public class WallpaperCropActivity extends Activity {
                     mCropBounds.roundOut(roundedTrueCrop);
                     mCropBounds = new RectF(roundedTrueCrop);
 
-<<<<<<< HEAD
-                    Point bounds = getImageBounds();
-=======
                     if (bounds == null) {
                         Log.w(LOGTAG, "cannot get bounds for image");
                         failure = true;
                         return false;
                     }
->>>>>>> android-4.4.4_r1
 
                     float[] rotatedBounds = new float[] { bounds.x, bounds.y };
                     rotateMatrix.mapPoints(rotatedBounds);
