@@ -341,10 +341,6 @@ public class NavigationBarView extends LinearLayout {
 
         ((ImageView)getRecentsButton()).setImageDrawable(mVertical ? mRecentLandIcon : mRecentIcon);
 
-        if (homeView != null) {
-            homeView.setImageDrawable(mVertical ? mHomeLandIcon : mHomeIcon);
-        }
-
         setDisabledFlags(mDisabledFlags, true);
     }
 
