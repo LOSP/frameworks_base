@@ -437,7 +437,7 @@ public class IconPackHelper {
                 back = iconInfo.iconBacks[sRandom.nextInt(iconInfo.iconBacks.length)];
             }
             Bitmap bmp = createIconBitmap(icon, res, back, iconInfo.iconMask, iconInfo.iconUpon,
-                    iconInfo.iconScale, iconInfo.iconSize);
+                    iconInfo.iconScale, ((BitmapDrawable) icon).getBitmap().getWidth());
             return bmp != null ? new BitmapDrawable(res, bmp): null;
         }
 
@@ -461,7 +461,7 @@ public class IconPackHelper {
                             % iconInfo.iconBacks.length];
                 }
                 Bitmap bmp = createIconBitmap(baseIcon, res, back, iconInfo.iconMask,
-                        iconInfo.iconUpon, iconInfo.iconScale, iconInfo.iconSize);
+                        iconInfo.iconUpon, iconInfo.iconScale, ((BitmapDrawable) baseIcon).getBitmap().getWidth());
                 if (!cacheComposedIcon(bmp, getCachedIconName(pkgName, resId, outValue.density))) {
                     Log.w(TAG, "Unable to cache icon " + outValue.string);
                     // restore the original TypedValue
