@@ -22,6 +22,7 @@ import android.util.Log;
 
 import com.android.systemui.R;
 import com.android.systemui.SystemUI;
+import com.android.systemui.statusbar.phone.PhoneStatusBar;
 
 import java.io.FileDescriptor;
 import java.io.PrintWriter;
@@ -97,7 +98,12 @@ public class SystemBars extends SystemUI implements ServiceMonitor.Callbacks {
             throw andLog("Error loading status bar component: " + clsName, t);
         }
         try {
-            mStatusBar = (BaseStatusBar) cls.newInstance();
+            if (clsName.contains("PhoneStatusBar")) {
+                // Dirty fix "no zero argument constructor" error
+                mStatusBar = new PhoneStatusBar();
+            } else {
+                mStatusBar = (BaseStatusBar) cls.newInstance();
+            }
         } catch (Throwable t) {
             throw andLog("Error creating status bar component: " + clsName, t);
         }
