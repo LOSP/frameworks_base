@@ -456,8 +456,6 @@ public class ThemeService extends IThemeService.Stub {
     }
 
     private boolean updateLockscreen(String pkgName) {
-        mContext.sendBroadcastAsUser(new Intent(Intent.ACTION_KEYGUARD_WALLPAPER_CHANGED),
-                                     UserHandle.ALL);
 	return true;
     }
  
